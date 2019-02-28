@@ -1,55 +1,93 @@
 package bin.xposed.Unblock163MusicClient;
 
+import android.content.res.Resources;
+
 import java.lang.ref.WeakReference;
 
 import de.robv.android.xposed.XSharedPreferences;
+import de.robv.android.xposed.XposedBridge;
 
 public class Settings {
     private static String chinaIP;
-
-    private static WeakReference<XSharedPreferences> xSharedPreferences = new WeakReference<>(null);
+    private static WeakReference<XSharedPreferences> weakModulePreferences = new WeakReference<>(null);
+    private static WeakReference<Resources> weakModuleResources = new WeakReference<>(null);
 
     private static XSharedPreferences getModuleSharedPreferences() {
-        XSharedPreferences preferences = xSharedPreferences.get();
+        XSharedPreferences preferences = weakModulePreferences.get();
         if (preferences == null) {
             preferences = new XSharedPreferences(BuildConfig.APPLICATION_ID);
             preferences.makeWorldReadable();
-            xSharedPreferences = new WeakReference<>(preferences);
+            weakModulePreferences = new WeakReference<>(preferences);
         } else {
             preferences.reload();
         }
         return preferences;
     }
 
+    private static Resources getWeakModuleResources() {
+        Resources resources = weakModuleResources.get();
+        if (resources == null) {
+            try {
+                resources = Utils.getModuleResources();
+                weakModuleResources = new WeakReference<>(resources);
+            } catch (Throwable t) {
+                XposedBridge.log(t);
+            }
+
+        }
+        return resources;
+    }
+
+
+    public static String getModuleResourcesString(int id) {
+        return getWeakModuleResources().getString(id);
+    }
+
+
+    public static boolean getModulePreferencesBoolean(int keyId, int defaultValueId) {
+        String valueString = getModuleResourcesString(defaultValueId);
+        boolean defaultValue = Boolean.parseBoolean(valueString);
+
+        return getModuleSharedPreferences().getBoolean(getModuleResourcesString(keyId), defaultValue);
+    }
+
 
     public static boolean isUnblockEnabled() {
-        return getModuleSharedPreferences().getBoolean("UNBLOCK", false);
+        return getModulePreferencesBoolean(R.string.unblock_key, R.string.unblock_default_value);
     }
 
     public static boolean isOverseaModeEnabled() {
-        return getModuleSharedPreferences().getBoolean("OVERSEA_MODE", false);
+        return getModulePreferencesBoolean(R.string.oversea_mode_key, R.string.oversea_mode_default_value);
     }
 
-    public static boolean isConfirmDislikeEnabled() {
-        return getModuleSharedPreferences().getBoolean("DISLIKE_CONFIRM", false);
+    public static boolean isDislikeConfirmEnabled() {
+        return getModulePreferencesBoolean(R.string.dislike_confirm_key, R.string.dislike_confirm_default_value);
     }
 
     public static boolean isPreventGrayEnabled() {
-        return getModuleSharedPreferences().getBoolean("PREVENT_GRAY", false);
+        return getModulePreferencesBoolean(R.string.prevent_gray_key, R.string.prevent_gray_default_value);
     }
 
-    static String getDnsServer() {
-        return "219.141.140.10";
+    public static boolean isUpgradeBitrateFrom3rdParty() {
+        return getModulePreferencesBoolean(R.string.upgrade_bitrate_from_3rd_party_key, R.string.upgrade_bitrate_from_3rd_party_default_value);
     }
 
+
+    public static boolean isTransparentPlayerNavBar() {
+        return getModulePreferencesBoolean(R.string.transparent_player_navigation_bar_key, R.string.transparent_player_navigation_default_value);
+    }
+
+    public static boolean isTransparentBaseNavBar() {
+        return getModulePreferencesBoolean(R.string.transparent_base_navigation_bar_key, R.string.transparent_base_navigation_bar_default_value);
+    }
 
     public static String getChinaIP() {
         if (chinaIP == null) {
             chinaIP = String.format("%s.%s.%s.%s",
                     111,
-                    Utility.randInt(1, 63),
-                    Utility.randInt(1, 255),
-                    Utility.randInt(1, 254));
+                    Utils.randInt(1, 63),
+                    Utils.randInt(1, 255),
+                    Utils.randInt(1, 254));
         }
         return chinaIP;
     }

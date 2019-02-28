@@ -5,7 +5,7 @@ import org.json.JSONObject;
 
 import java.util.Locale;
 
-import static bin.xposed.Unblock163MusicClient.Utility.optString;
+import static bin.xposed.Unblock163MusicClient.Utils.optString;
 import static de.robv.android.xposed.XposedBridge.log;
 
 class Song {
@@ -19,14 +19,20 @@ class Song {
     String type;
     JSONObject uf;
     String url;
+    JSONObject freeTrialInfo;
 
     String matchedPlatform;
     String matchedSongName;
     String matchedArtistName;
     boolean matchedDuration;
-    Boolean accessible;
+
+    private Boolean accessible;
 
     static Song parseFromOther(JSONObject songJson) {
+        if (songJson == null) {
+            return null;
+        }
+
         Song song = new Song();
         song.id = songJson.optLong("id");
         song.code = songJson.optInt("code");
@@ -38,6 +44,7 @@ class Song {
         song.type = optString(songJson, "type");
         song.uf = songJson.optJSONObject("uf");
         song.url = optString(songJson, "url");
+        song.freeTrialInfo = songJson.optJSONObject("freeTrialInfo");
         song.parseMatchInfo(songJson);
         return song;
     }
@@ -84,7 +91,7 @@ class Song {
         matchedDuration = songJson.optBoolean("matchedDuration");
     }
 
-    boolean checkAccessible() {
+    boolean isAccessible() {
         if (accessible != null) {
             return accessible;
         }
@@ -110,6 +117,25 @@ class Song {
         return matchedPlatform != null;
     }
 
+    boolean hasUserCloudFile() {
+        return uf != null;
+    }
+
+
+    boolean isFreeTrialFile() {
+        return freeTrialInfo != null;
+    }
+
+
+    boolean isPayed() {
+        return payed != 0;
+    }
+
+    boolean isFee() {
+        return fee != 0;
+    }
+
+
     private boolean is3rdMatchedDuration() {
         return matchedDuration;
     }
@@ -122,7 +148,7 @@ class Song {
     }
 
     int getPrefer() {
-        if (url == null || !checkAccessible()) {
+        if (!isAccessible()) {
             return 0;
         }
 
